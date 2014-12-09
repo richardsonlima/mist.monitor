@@ -125,6 +125,7 @@ def check_condition(condition, datapoints):
         next_notification = reminder_list[condition.notification_level]
         next_notification += condition.reminder_offset
         if duration < next_notification:
+            log.info(msg)
             return
         try:
             notify_core(condition, value)
@@ -239,19 +240,21 @@ def check_machine(machine, rule_id=''):
                       if val is not None]
         for condition in conditions.pop(target):
             if not datapoints:
-                log.warning("%s no data for rule", machine.uuid)
+                log.warning("%s/%s [%s] no data for rule",
+                            machine.uuid, condition.rule_id, condition)
                 continue
             check_condition(condition, datapoints)
 
     if conditions:
-        for target, condition in conditions.items():
+        for target, conds in conditions.items():
             if target == "nodata":
                 # if nodata rule didn't return any datapoints, the whisper
                 # files must be missing, so make the rule true
                 check_condition(condition, [(1, 0)])
             else:
-                log.warning("%s/%s [%s] target not found for rule",
-                            machine.uuid, condition.rule_id, condition)
+                for condition in conds:
+                    log.warning("%s/%s [%s] target not found for rule",
+                                machine.uuid, condition.rule_id, condition)
 
 
 def main():
